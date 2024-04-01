@@ -93,8 +93,25 @@ const CommentInfoSchema = new mongoose.Schema({
 });
 
 const HiddenSchema = new mongoose.Schema({
-    AccountId: String,
-    PostId: String,
+    AccountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account'
+    },
+    PostId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PostInfo'
+    }
+});
+
+const numvotedSchema = new mongoose.Schema({
+    AccountId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account'
+    },
+    PostId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PostInfo'
+    }
 });
 
 const ReplyInfoSchema = new mongoose.Schema({
@@ -105,6 +122,8 @@ const ReplyInfoSchema = new mongoose.Schema({
     NumvoteCount: Number,
     CommenterId: String, 
  });
+
+ const Numvoted = mongoose.model('numvoted', numvotedSchema);
 
  const Account = mongoose.model('Account', AccountSchema);
  const CommentInfo = mongoose.model('CommentInfo', CommentInfoSchema);
