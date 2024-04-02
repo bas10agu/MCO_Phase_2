@@ -22,6 +22,16 @@ Handlebars.registerHelper('formatNumber', function(num) {
     }
 });
 
+Handlebars.registerHelper('eq', function(arg1, arg2, options) {
+    var strArg1 = String(arg1);
+    var strArg2 = String(arg2);
+    console.log('Comparing:', strArg1, 'to', strArg2, 'Result:', strArg1 == strArg2);
+
+    return strArg1 == strArg2; 
+});
+
+
+
 
 const bodyParser = require('body-parser');
 server.use(express.json({ limit: '50mb' }));
@@ -86,10 +96,16 @@ const AccountSchema = new mongoose.Schema({
 const CommentInfoSchema = new mongoose.Schema({
     Body: String,
     Date: String,
-    PostId: String,
+    PostId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PostInfo'
+    },
     isHidden: Boolean,
-    CommenterId: String,
-    username: Number,
+    CommenterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account'
+    }, 
+    NumvoteCount: Number,
 });
 
 const HiddenSchema = new mongoose.Schema({
@@ -116,11 +132,18 @@ const numvotedSchema = new mongoose.Schema({
 
 const ReplyInfoSchema = new mongoose.Schema({
     Body: String,
-    CommentId: String,
+    CommentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CommentInfo'
+    },
+    CommentBy: String,  
     Date: String,
     isHidden: Boolean,
     NumvoteCount: Number,
-    CommenterId: String, 
+    CommenterId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account'
+    },
  });
 
  const Numvoted = mongoose.model('numvoted', numvotedSchema);
@@ -214,9 +237,6 @@ server.get('/general', async (req, res) => {
 });
 
 
-
-
-
 server.get('/createPost', function(req, resp){
         resp.render('createPost',{
             layout: 'index',
@@ -263,8 +283,76 @@ server.post('/createPost', async (req, res) => {
     }
 });
 
+server.post('/comment', async (req, res) => {
+    try {
+        const {comment, currentDate, PostId} = req.body;
+
+        // Assuming userData is retrieved somewhere
+        const userData = await Account.findOne({ username: loggedInUser });
+
+        if (!userData) {
+            return res.status(404).send('User not found');
+        }
+
+        const newComment = new CommentInfo({
+            Body: comment,
+            Date: currentDate,
+            PostId: PostId,
+            isHidden: false,
+            CommenterId: userData._id, 
+            NumvoteCount: 0,
+        });
+        const result = await newComment.save();
+
+         // Find the corresponding post and update its NumvoteCount
+        // const updatedPost = await PostInfo.findByIdAndUpdate(PostId, { $inc: { NumvoteCount: 1 } }, { new: true });
 
 
+        console.log('Data added to the database:', result); 
+        console.log('Updated post NumvoteCount:', updatedPost.NumvoteCount);
+    } catch (error) {
+        console.error('Error adding data to the database:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+server.post('/reply', async (req, res) => {
+    try {
+        const {comment, currentDate, PostId, commentByValue, commentText, commentVotecount} = req.body;
+
+        // Assuming userData is retrieved somewhere
+        const userData = await Account.findOne({ username: loggedInUser });
+        const commentorData = await Account.findOne({ username: commentByValue});
+        const commentData = await CommentInfo.findOne({
+            Body: commentText,
+            PostId: PostId,
+            CommenterId: commentorData._id,
+            NumvoteCount: commentVotecount,
+        });
+        
+        if (!userData) {
+            return res.status(404).send('User not found');
+        }
+
+        const newReply = new ReplyInfo({
+            Body: comment,
+            CommentId: commentData.id, 
+            CommentBy: commentByValue,
+            Date: currentDate,
+            isHidden: false, 
+            NumvoteCount: 0,
+            CommenterId: userData._id,
+        });
+
+        const result = await newReply.save();
+
+        console.log('Data added to the database:', result); 
+        
+    } catch (error) {
+        console.error('Error adding data to the database:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 server.get('/signup', (req, res) => {
     res.render('register', {
@@ -508,6 +596,9 @@ server.get('/post/:postId', async (req, resp) => {
   
       const postInfoData = await PostInfo.findById(postId).populate('AccountId');
       const userData = await Account.findOne({ username: loggedInUser });
+      // Example of populating CommenterId field when querying comments
+      const commentInfoData = await CommentInfo.find().populate('CommenterId');
+      const replyInfoData = await ReplyInfo.find().populate('CommentId').populate('CommenterId');
 
         if (!userData) {
             return resp.status(404).send('User not found');
@@ -521,6 +612,8 @@ server.get('/post/:postId', async (req, resp) => {
         index_title: 'Post',
         postInfoData,
         userData,
+        commentInfoData,
+        replyInfoData,
     });
     } catch (error) {
       console.error('Error retrieving PostInfo data:', error);
@@ -548,6 +641,25 @@ server.get('/post/:postId', async (req, resp) => {
     }
 });
 
+server.get('/search', async (req, res) => {
+    try {
+        const searchQuery = req.query.q;
+
+        // Perform a case-insensitive search in the 'Title' and 'Body' fields of the PostInfo collection
+        const searchResults = await PostInfo.find({
+            $or: [
+                { Title: { $regex: searchQuery, $options: 'i' } },
+                { Body: { $regex: searchQuery, $options: 'i' } }
+            ]
+        }).populate('AccountId');
+
+        // Respond with the search results
+        res.json(searchResults);
+    } catch (error) {
+        console.error('Error performing search:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 const port = 3000;
 server.listen(port, () => {

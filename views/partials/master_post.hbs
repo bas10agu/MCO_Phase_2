@@ -1,4 +1,5 @@
 {{!-- MASTER-POSTS --}}
+{{!-- {{log this}} --}}
 <div class="main_master_post" id="{{postInfoData._id}}">
         
                     <div class="main_master_post-top">
@@ -12,7 +13,7 @@
                                 <div class="main_post-date">{{postInfoData.Date}}</div>
                             </div>
 
-                            <div class="main_post-desc-title">{{postInfoData.Title}}</div>
+                            <div class="main_post-desc-title">{{postInfoData.Title}} {{replyInfoData.length}}</div>
                             <div class="main_post-desc-content">{{postInfoData.Body}}</div>
                             {{#if postInfoData.Image}}
                                 <div class="main_post-img-container">
@@ -26,13 +27,13 @@
                             <div class="main_vote">
                                 <img class="up_vote" src="/CCAPDEV-LOGO-2/2.png" alt="">
                                 <img class="up_vote_filled" src="/CCAPDEV-LOGO-2/16.png" alt="" hidden>
-                                <span class = "num_vote">0</span>
+                                <span class = "num_vote">{{postInfoData.NumvoteCount}}</span>
                                 <img class="down_vote" src="/CCAPDEV-LOGO-2/3.png" alt="">
                                 <img class="down_vote_filled" src="/CCAPDEV-LOGO-2/17.png" alt="" hidden>
                             </div>
                             <div class="button-container" id = "master-comment">
                                 <div class="main_post-buttons-comment"></div>
-                                <span><span class="num_comment">1</span>Comment</span>
+                                <span><span class="num_comment">{{postInfoData.CommentCount}}</span>Comment</span>
                             </div>
                             <div class="button-container" id="shareButton">
                                 <div class="main_post-buttons-share"></div>
@@ -45,16 +46,21 @@
                                 <span>Save</span>
                             </div>
 
-                            <div class="button-container" id="editPost" onclick="openLoginForm_edit('{{postInfoData._id}}')">
-                            <div class="main_post-buttons-edit"></div>
-                            <span>Edit</span>
-                            </div>
+                            {{#if (eq userData._id postInfoData.AccountId._id)}}
+                              <div class="button-container" id="editPost" onclick="openLoginForm_edit('{{postInfoData._id}}')">
+                              <div class="main_post-buttons-edit"></div>
+                              <span>Edit</span>
+                              </div>
 
-
-                            <div class="button-container" onclick="openLoginForm_delete()">
-                                <div class="main_post-buttons-delete"></div>
-                                <span>Delete</span>
-                            </div>                            
+                            
+                              <div class="button-container" onclick="deletePost('{{postInfoData._id}}')">
+                                  <div class="main_post-buttons-delete"></div>
+                                  <span>Delete</span>
+                              </div>          
+                            {{/if}}         
+                    
+  
+                               
                         </div>
                     </div>
 
@@ -72,169 +78,32 @@
             <button class="cancel-comment-button">Cancel</button>
         </div>
         
-        <div class="sort-search-part">
-            <div class="sort-search-container">
-                <div class="sort-by">
-                    <div class="dropdown">
-                        <button class="sort-button" onclick="toggleDropdown()">Sort By: Best</button>
-                        <div class="dropdown-content" id="sortOptions">
-                          <a class="best" href="#">Best</a>
-                          <a class="new" href="#">New</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
+          <div class="sort-search-part">
+              <div class="sort-search-container">
+                  <div class="sort-by">
+                      <div class="dropdown">
+                          <button class="sort-button" onclick="toggleDropdown()">Sort By: Best</button>
+                          <div class="dropdown-content" id="sortOptions">
+                            <a class="best" href="#">Best</a>
+                            <a class="new" href="#">New</a>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
 
 
 
 
         <div class="comment-section">
+        
+        {{#each commentInfoData}}
+            {{#if (eq this.PostId ../postInfoData._id)}}
+                {{> comment commentInfoData=this replyInfoData=../replyInfoData}}
+            {{/if}}
+        {{/each}}
 
-            <div class="comment-container">
-                <div class="comment-profile">
-                    <img class=userpfp src="/CCAPDEV-LOGO-2/user1.png">
-                    <span class="threadline">|</span>
-                </div>
-                <div class="comment-info-container">
-                    <div class="info-comment">
-                        <p class="comment-by">stargirlfromscosmos</p> <span class="posted-time">&#xb7; 3 Jan 2024</span>
-                    </div>
-                    <div class="comment-body">
-                        <p class="comment-text">heyy i've been wanting to do this nanghinayang  ako i wasn't able to get it for gesport i'm g OPPP</p>
-                    </div>
-                    <div class="comment-section-icons">
-                        <img class="upvote-icon" src="/CCAPDEV-LOGO-2/2.png">
-                        <img class="upvote-icon-filled" src="/CCAPDEV-LOGO-2/16.png" hidden>
-
-                        <span class="vote-count">0</span>
-
-
-                        <img class="downvote-icon" src="/CCAPDEV-LOGO-2/3.png">
-                        <img class="downvote-icon-filled" src="/CCAPDEV-LOGO-2/17.png" hidden>
-
-
-                        <div class="reply-container">
-                            <button class="reply-button">
-                                <span class="reply-text">Reply</span>
-                            </button>
-                        </div>                 
-                    </div>
-                    <textarea class="reply-textarea" hidden></textarea>
-                    <button class="comment-button" hidden>Comment</button>
-                    <button class="cancel-button" hidden>Cancel</button>
-                </div>
-                <div class="reply-section">
-                    <div class="comment-container replied-comment-container">
-                        <div class="comment-profile">
-                            <div class=userpfp style="background-image: ${userPhoto};"></div>
-                            <span class="threadline">|</span>
-                        </div>
-                        <div class="comment-info-container">
-                            <div class="info-comment">
-                                <p class="comment-by">KookyPookie</p> ▸ <span class="replying-to">@stargirlfromscosmos</span>  <span class="posted-time">&#xb7; 27 Mar 2024</span>
-                            </div>
-                            <div class="comment-body">
-                                <p class="comment-text">Testing 2</p>
-                            </div>
-                            <div class="comment-section-icons">
-                                <img class="upvote-icon" src="/CCAPDEV-LOGO-2/2.png">
-                                <img class="upvote-icon-filled" src="/CCAPDEV-LOGO-2/16.png" hidden>
-
-                                <span class="vote-count">0</span>
-
-
-                                <img class="downvote-icon" src="/CCAPDEV-LOGO-2/3.png">
-                                <img class="downvote-icon-filled" src="/CCAPDEV-LOGO-2/17.png" hidden>
-
-
-                                <div class="reply-container">
-                                <button class="reply-button">
-                                    <span class="reply-text">Reply</span>
-                                </button>
-                            </div>                   
-                            </div>
-                            <textarea class="reply-textarea replied-textarea" hidden></textarea>
-                            <button class="comment-button" hidden>Comment</button>
-                            <button class="cancel-button" hidden>Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{!-- <div class="comment-container">
-                <div class="comment-profile">
-                    <img class=userpfp src="/CCAPDEV-LOGO-2/user1.png">
-                    <span class="threadline">|</span>
-                </div>
-                <div class="comment-info-container">
-                    <div class="info-comment">
-                        <p class="comment-by">stargirlfromscosmos</p> <span class="posted-time">&#xb7; 27 Mar 2024</span>
-                    </div>
-                    <div class="comment-body">
-                        <p class="comment-text">heyy i've been wanting to do this nanghinayang  ako i wasn't able to get it for gesport i'm g OPPP</p>
-                    </div>
-                    <div class="comment-section-icons">
-                        <img class="upvote-icon" src="/CCAPDEV-LOGO-2/2.png">
-                        <img class="upvote-icon-filled" src="/CCAPDEV-LOGO-2/16.png" hidden>
-
-                        <span class="vote-count">0</span>
-
-
-                        <img class="downvote-icon" src="/CCAPDEV-LOGO-2/3.png">
-                        <img class="downvote-icon-filled" src="/CCAPDEV-LOGO-2/17.png" hidden>
-
-
-                        <div class="reply-container">
-                            <button class="reply-button">
-                                <span class="reply-text">Reply</span>
-                            </button>
-                        </div>                 
-                    </div>
-                    <textarea class="reply-textarea" hidden></textarea>
-                    <button class="comment-button" hidden>Comment</button>
-                    <button class="cancel-button" hidden>Cancel</button>
-                </div>
-                <div class="reply-section">
-                    <div class="comment-container">
-                        <div class="comment-profile">
-                            <div class=userpfp style="background-image: ${userPhoto};"></div>
-                            <span class="threadline">|</span>
-                        </div>
-                        <div class="comment-info-container">
-                            <div class="info-comment">
-                                <p class="comment-by">KookyPookie</p> ▸ <span class="replying-to">@stargirlfromscosmos</span>  <span class="posted-time">&#xb7; 27 Mar 2024</span>
-                            </div>
-                            <div class="comment-body">
-                                <p class="comment-text">Testing 2</p>
-                            </div>
-                            <div class="comment-section-icons">
-                                <img class="upvote-icon" src="/CCAPDEV-LOGO-2/2.png">
-                                <img class="upvote-icon-filled" src="/CCAPDEV-LOGO-2/16.png" hidden>
-
-                                <span class="vote-count">0</span>
-
-
-                                <img class="downvote-icon" src="/CCAPDEV-LOGO-2/3.png">
-                                <img class="downvote-icon-filled" src="/CCAPDEV-LOGO-2/17.png" hidden>
-
-
-                                <div class="reply-container">
-                                <button class="reply-button">
-                                    <span class="reply-text">Reply</span>
-                                </button>
-                            </div>                   
-                            </div>
-                            <textarea class="reply-textarea" hidden></textarea>
-                            <button class="comment-button" hidden>Comment</button>
-                            <button class="cancel-button" hidden>Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div> --}}
-
-           
-            
         </div>
 </div>
 
@@ -299,4 +168,28 @@
         }
       }
     }
+
+    console.log(commentInfoData.PostId postInfoData._id)
+</script>
+<script>
+  function deletePost(postId) {
+      if (confirm("Are you sure you want to delete this post?")) {
+          fetch(`/delete-post?postId=${postId}`, {
+              method: 'DELETE'
+          })
+          .then(response => {
+              if (response.ok) {
+                  window.location.href = '/general';
+              } else {
+                  console.error('Error deleting post');
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+          });
+      }
+  }
+
+
+  
 </script>
